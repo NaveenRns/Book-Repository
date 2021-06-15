@@ -1,5 +1,6 @@
 package com.book.bookservice.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.book.bookservice.model.Book;
 import com.book.bookservice.service.BookService;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+
+
 
 @RestController
 @RequestMapping("/bookapi")
@@ -25,6 +29,7 @@ public class BookController {
 	BookService bookService; 
 	
 	@GetMapping("/book/")
+	@HystrixCommand(fallbackMethod = "getDefaultBooks")
 	public ResponseEntity<List<Book>> getAllBooks(){
 		
 		List<Book> books = bookService.findAllBooks();
@@ -36,7 +41,15 @@ public class BookController {
 		return new ResponseEntity<>(books, HttpStatus.OK);
 	}
 	
+	public ResponseEntity<List<Book>> getDefaultBooks(){
+		List<Book> books = new ArrayList<Book>();
+		books.add(new Book(2,"JPOP","Epam"));
+		
+		return new ResponseEntity<>(books, HttpStatus.OK);
+	}
+	
 	@GetMapping("/book/{id}")
+	@HystrixCommand(fallbackMethod = "getdefaultBook")
 	public ResponseEntity<?> getBook(@PathVariable Integer id){
 		
 		Book book = bookService.findBookById(id);
@@ -47,6 +60,11 @@ public class BookController {
 		}
 		return new ResponseEntity<>(book,HttpStatus.OK);
 		
+	}
+	
+	public ResponseEntity<?> getdefaultBook(@PathVariable Integer id){
+		Book book = new Book(6,"Not Found","Null");
+		return new ResponseEntity<>(book,HttpStatus.OK);
 	}
 	
 	@PostMapping("/book/")
